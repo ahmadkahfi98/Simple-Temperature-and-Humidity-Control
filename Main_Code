@@ -1,0 +1,116 @@
+#include <DHT.h>
+#include <Wire.h>
+#include <LiquidCrystal_I2C.h>
+
+#define DHTPIN 10     
+#define DHTTYPE DHT22   
+#define BUZZER_PIN 8
+
+DHT dht(DHTPIN, DHTTYPE);
+
+LiquidCrystal_I2C lcd(0x27, 16, 2);
+
+void setup() {
+
+  // Initialize buzzer
+  pinMode(BUZZER_PIN, OUTPUT);
+  digitalWrite(BUZZER_PIN, LOW);
+
+  // Initialize LCD
+  lcd.init();
+  lcd.backlight();
+
+  // Initial display
+  lcd.setCursor(0, 0);
+  lcd.print("System Status:");
+
+  lcd.setCursor(0, 1);
+  lcd.print("Monitoring OK");
+
+  // Initialize DHT sensor
+  dht.begin();
+
+  delay(1000);
+
+  lcd.clear();
+}
+
+void loop() {
+
+  // Wait between measurements
+  delay(1000);
+
+  // Read humidity
+  float h = dht.readHumidity();
+
+  // Read temperature in Celsius
+  float t = dht.readTemperature();
+
+  // Check if reading failed
+  if (isnan(h) || isnan(t)) {
+
+    lcd.clear();
+
+    lcd.setCursor(0, 0);
+    lcd.print("DHT Sensor");
+
+    lcd.setCursor(0, 1);
+    lcd.print("Read Failed!");
+
+    // Turn buzzer OFF
+    digitalWrite(BUZZER_PIN, LOW);
+
+    return;
+  }
+
+  // ==========================================
+  // BUZZER CONDITION
+  // Temperature >= 30 C
+  // AND
+  // Humidity >= 30 %
+  // ==========================================
+
+  if (t >= 30.0 && h >= 30.0) {
+
+    digitalWrite(BUZZER_PIN, HIGH);
+
+  } else {
+
+    digitalWrite(BUZZER_PIN, LOW);
+  }
+
+  // ==========================================
+  // DISPLAY TEMPERATURE
+  // ==========================================
+
+  lcd.clear();
+
+  lcd.setCursor(0, 0);
+  lcd.print("Temp: ");
+  lcd.print(t, 1);
+  lcd.print((char)223);
+  lcd.print("C");
+
+  // ==========================================
+  // DISPLAY HUMIDITY
+  // ==========================================
+
+  lcd.setCursor(0, 1);
+  lcd.print("Humidity: ");
+  lcd.print(h, 1);
+  lcd.print("%");
+
+   // ==========================================
+  // DISPLAY BUZZER STATUS
+  // ==========================================
+  lcd.setCursor(0, 2);
+  lcd.print("Buzzer: ");
+
+  if (t >= 30.0 && h >= 30.0) {
+    lcd.print("ON");
+  } else {
+    lcd.print("OFF");
+  }
+
+  delay(1000);
+}
